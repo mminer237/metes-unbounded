@@ -1,0 +1,8 @@
+{% if site.author -%}
+<footer>
+	<div>
+		Made by <a href="{{ site.author.site }}">{{ site.author.name }}</a>
+	</div>
+	<a href="{{ site.sourceUrl }}"><img src="/assets/GitHub-Mark.svg" alt="GitHub Logo" title="View Source Code on GitHub" width="40px"></a>
+</footer>
+{%- endif %}

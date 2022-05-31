@@ -1,0 +1,35 @@
+title: Metes Unbounded
+tagline: Convert metes and bounds legal descriptions into a visible shape
+author:
+  name: Matthew Miner
+  email: mminer237@gmail.com
+  site: https://matthewminer.name
+url: https://metes-unbounded.netlify.app
+sourceUrl: https://github.com/mminer237/metes-unbounded
+# tagManagerCode: GTM-TK37G57
+# googleAdClient: ca-pub-5576042369154755
+lightThemeColor: "#ACDA88"
+darkThemeColor: "#3E7321"
+
+# googleFonts:
+#   - Roboto:500
+
+defaults:
+  -
+    scope:
+      path: ""
+    values:
+      layout: "default"
+
+collections:
+  pages:
+    output: true
+    permalink: /:name
+
+permalink: /:name
+
+sass:
+  style: compressed
+
+plugins:
+  - jekyll-sitemap

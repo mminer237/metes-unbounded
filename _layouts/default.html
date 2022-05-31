@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		{% if site.tagManagerCode %}<!-- Google Tag Manager -->
+		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+		new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+		j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+		'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+		})(window,document,'script','dataLayer','{{ site.tagManagerCode }}');</script>
+		<!-- End Google Tag Manager -->{% endif %}
+		{% if site.googleAdClient %}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+		<script>
+			 (adsbygoogle = window.adsbygoogle || []).push({
+				  google_ad_client: "{{ site.googleAdClient }}",
+				  enable_page_level_ads: true
+			 });
+		</script>{% endif %}
+		<link rel="icon" href="/favicon.ico">
+		<meta charset="UTF-8">
+		{% if site.author %}
+		<meta name="author" content="{{ site.author.name }}">
+		{% endif %}
+		{% if site.themeColor %}
+		<meta name="theme-color" content="{{ site.themeColor }}" />
+		{% endif %}
+		{% if site.lightThemeColor %}
+		<meta name="theme-color" media="(prefers-color-scheme: light)" content="{{ site.lightThemeColor }}" />
+		{% endif %}
+		{% if site.darkThemeColor %}
+		<meta name="theme-color" media="(prefers-color-scheme: dark)" content="{{ site.darkThemeColor }}" />
+		{% endif %}
+		<title>{% if page.url == "/" %}{{ site.title | xml_escape }} – {{ site.tagline | xml_escape }}{% else %}{{ page.title | xml_escape }} – {{ site.title | xml_escape }}{% endif %}</title>
+		{% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="/css/style.css">
+		{% for font in site.googleFonts %}
+		<link href="https://fonts.googleapis.com/css?family={{ font }}&display=swap" rel="stylesheet">
+		{% endfor %}
+		{% for script in layout.scripts %}
+		<script src="{{ script }}" defer></script>
+		{% endfor %}
+		{% for script in page.scripts %}
+		<script src="{{ script }}" defer></script>
+		{% endfor %}
+	</head>
+	<body>
+		{% if site.tagManagerCode %}<!-- Google Tag Manager (noscript) -->
+		<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ site.tagManagerCode }}"
+		height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+		<!-- End Google Tag Manager (noscript) -->{% endif %}
+		{% include header.html %}
+		{% include nav.html %}
+		<main>
+			{{ content }}
+		</main>
+		{% include footer.html %}
+	</body>
+</html>
