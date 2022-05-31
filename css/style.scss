@@ -3,9 +3,10 @@
 :root {
 	--text-color: black;
 	--background-color: white;
+	--section-background-color: white;
 	--accent-color: #ACDA88;
-	--link-color: #3E7321;
-	--link-hover-color: hsl(99, 45%, 37%);
+	--object-color: #3E7321;
+	--object-hover-color: hsl(99, 45%, 41%);
 	--error-color: hsl(18, 53%, 69%);
 	--box-shadow: 0 2px 5px 0 rgba(0,0,0,0.26);
 }
@@ -13,9 +14,10 @@
 	:root {
 		--text-color: white;
 		--background-color: #181818;
+		--section-background-color: #282828;
 		--accent-color: #3E7321;
-		--link-color: #ACDA88;
-		--link-hover-color: hsl(94, 53%, 79%);
+		--object-color: #ACDA88;
+		--object-hover-color: hsl(94, 53%, 79%);
 		--error-color: hsl(18, 45%, 29%);
 		--box-shadow: 0 3px 6px 0 rgba(0,0,0,0.35);
 	}
@@ -50,6 +52,7 @@ body, textarea {
 	font-style: italic;
 }
 header {
+	box-shadow: var(--box-shadow);
 	padding-top: 10px;
 	>* {
 		align-items: center;
@@ -74,6 +77,7 @@ h1 {
 	line-height: 72px;
 }
 header, footer {
+	background-color: var(--accent-color);
 	text-align: center;
 }
 nav {
@@ -106,10 +110,9 @@ main {
 	flex-grow: 1;
 }
 section, article, details {
+	background-color: var(--section-background-color);
 	box-shadow: var(--box-shadow);
 	color: var(--text-color);
-}
-section, article, details {
 	max-width: 700px;
 	margin: 15px auto;
 	padding: 10px;
@@ -138,10 +141,10 @@ p:last-child {
 	margin-bottom: 0;
 }
 a {
-	color: var(--link-color);
+	color: var(--object-color);
 }
 a:hover {
-	color: var(--link-hover-color);
+	color: var(--object-hover-color);
 }
 .error {
 	background-color: var(--error-color);
@@ -159,11 +162,11 @@ textarea {
 	font-size: 12pt;
 	margin: 10px;
 	padding: 5px;
-	width: 100%;
+	width: calc(100% + 8px - 40px);
 }
 #map-canvas {
 	height: 400px;
-	width: 100%;
+	width: calc(100% + 8px - 40px);
 }
 footer {
 	align-items: center;
