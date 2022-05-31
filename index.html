@@ -10,7 +10,7 @@ scripts:
 	<p>Note: This site has no guarantee of accuracy and should not be relied on for legal work. If you require help with property law, please hire a lawyer. If you are in Illinois, my law firm of <a href="https://www.allenandkorkowski.com/">Allen &amp; Korkowski &amp; Associates</a> would love to help you with any property law questions.</p>
 </section>
 <noscript>
-	<section>
+	<section class="error">
 		<h2>Error</h2>
 		<p>{{ site.title }} requires JavaScript to function. Please enable JavaScript in your browser.</p>
 	</section>
@@ -18,6 +18,7 @@ scripts:
 <section>
 	<h2>Legal Description</h2>
 	<textarea id="legal-description" placeholder="Enter legal description here"></textarea>
+	<div id="legal-description-error" class="error" style="display: none;"></div>
 </section>
 <section id="evelope-section">
 	<h2>Map Result</h2>
