@@ -69,8 +69,9 @@ header {
 	}
 }
 h1 {
-	font-size: 60px;
-	line-height: 60px;
+	font-family: 'Geo', monospace;
+	font-size: 72px;
+	line-height: 72px;
 }
 header, footer {
 	text-align: center;
@@ -117,11 +118,12 @@ section, article, details {
 	align-items: flex-start;
 }
 h2, h2 a, h3, h4, h5, h6, summary {
+	font-family: 'Geo', serif;
 	font-weight: bold;
-	margin: 0 0 15px 0;
+	margin: 0;
 }
 h2, summary {
-	font-size: 24px;
+	font-size: 32px;
 }
 summary {
 	cursor: pointer;
@@ -166,6 +168,9 @@ textarea {
 footer {
 	align-items: center;
 	display: flex;
+	font-family: Geo;
+	font-size: 28px;
+	word-spacing: 8px;
 	justify-content: center;
 	> * {
 		padding: 20px;

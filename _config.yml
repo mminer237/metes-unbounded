@@ -11,8 +11,8 @@ sourceUrl: https://github.com/mminer237/metes-unbounded
 lightThemeColor: "#ACDA88"
 darkThemeColor: "#3E7321"
 
-# googleFonts:
-#   - Roboto:500
+googleFonts:
+  - Geo
 
 defaults:
   -
