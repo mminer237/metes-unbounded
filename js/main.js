@@ -12,42 +12,42 @@ const instructions = {
 		type: "command"
 	},
 	"north": {
-		matchWords: [/north\b/, /northerly/, /\bn\b/, /northward/, /northwards/],
+		matchWords: [/north/, /northerly/, /n/, /northward/, /northwards/],
 		function: () => { state.adjective = "north"; },
 		type: "adjective"
 	},
 	"south": {
-		matchWords: [/south\b/, /southerly/, /\bs\b/, /southward/, /southwards/],
+		matchWords: [/south/, /southerly/, /s/, /southward/, /southwards/],
 		function: () => { state.adjective = "south"; },
 		type: "adjective"
 	},
 	"east": {
-		matchWords: [/east\b/, /easterly/, /\be\b/, /eastward/, /eastwards/],
+		matchWords: [/east/, /easterly/, /e/, /eastward/, /eastwards/],
 		function: () => { state.adjective = "east"; },
 		type: "adjective"
 	},
 	"west": {
-		matchWords: [/west\b/, /westerly/, /\bw\b/, /westward/, /westwards/],
+		matchWords: [/west/, /westerly/, /w/, /westward/, /westwards/],
 		function: () => { state.adjective = "west"; },
 		type: "adjective"
 	},
 	"north-east": {
-		matchWords: [/north-east\b/, /north east/, /northeast/, /north-easterly/, /\bne\b/],
+		matchWords: [/north-east/, /north east/, /northeast/, /north-easterly/, /ne/],
 		function: () => { state.adjective = "north-east"; },
 		type: "adjective"
 	},
 	"north-west": {
-		matchWords: [/north-west\b/, /north west/, /northwest/, /northwesterly/, /\bnw\b/],
+		matchWords: [/north-west/, /north west/, /northwest/, /northwesterly/, /nw/],
 		function: () => { state.adjective = "north-west"; },
 		type: "adjective"
 	},
 	"south-east": {
-		matchWords: [/south-east\b/, /south east/, /southeast/, /southeasterly/, /\bse\b/],
+		matchWords: [/south-east/, /south east/, /southeast/, /southeasterly/, /se/],
 		function: () => { state.adjective = "south-east"; },
 		type: "adjective"
 	},
 	"south-west": {
-		matchWords: [/south-west\b/, /south west/, /southwest/, /southwesterly/, /\bsw\b/],
+		matchWords: [/south-west/, /south west/, /southwest/, /southwesterly/, /sw/],
 		function: () => { state.adjective = "south-west"; },
 		type: "adjective"
 	},
@@ -75,7 +75,7 @@ const instructions = {
 		type: "part"
 	},
 	"of": {
-		matchWords: [/\bof\b/],
+		matchWords: [/of/],
 		function: () => {},
 		type: "relational"
 	}
@@ -180,26 +180,29 @@ function updateMap() {
 			for (let i = 0; i < words.length; i++) {
 				const word = words[i];
 				wordBuffer += word + " ";
+				let match;
 				const instruction = Object.keys(instructions).find(x =>
 					instructions[x].matchWords.some(matchWord =>
-						wordBuffer.match(new RegExp(matchWord, 'i'))
+						match = wordBuffer.match(new RegExp(String.raw`\b${matchWord.source}\b`, 'i'))
 					)
 				);
 				if (instruction) {
 					console.log("Found instruction: " + instruction);
 					wordBuffer = "";
 					if (instructions[instruction].type === "relational") {
-						instructionBuffer.push([instruction], []);
+						if (instructions[instructionBuffer[instructionBuffer.length - 1][instructionBuffer[instructionBuffer.length - 1].length - 1][0]].type === "part") {
+							instructionBuffer.push([[instruction, match]], []);
+						}
 					}
 					else {
-						instructionBuffer[instructionBuffer.length - 1].push(instruction);
+						instructionBuffer[instructionBuffer.length - 1].push([instruction, match]);
 					}
 				}
 			}
 
 			/* Interpret instructions */
 			for (let i = instructionBuffer.length - 1; i >= 0; i--) {
-				instructionBuffer[i].forEach(instruction => instructions[instruction].function());
+				instructionBuffer[i].forEach(([instruction, match]) => instructions[instruction].function(match));
 			}
 
 			/* Draw map */
