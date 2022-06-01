@@ -167,7 +167,10 @@ function updateMap() {
 	legalDescriptionError.style.display = "none";
 	let legalDescription = legalDescriptionBox.value;
 	mapContext.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
-	mapCanvas.setAttribute('width', window.getComputedStyle(mapCanvas, null).getPropertyValue("width"));
+	const width =  window.getComputedStyle(mapCanvas, null).getPropertyValue("width");
+	mapCanvas.setAttribute('width', width);
+	if (width < 400)
+		mapCanvas.setAttribute('height', width);
 
 	if (legalDescription.length > 0) {
 		state = new DescriptionState();
@@ -206,7 +209,7 @@ function updateMap() {
 			}
 
 			/* Draw map */
-			const scale = 350;
+			const scale = Math.min(350, mapCanvas.width);
 			const xOffset = (mapCanvas.width - scale) / 2;
 			const yOffset = 25;
 			if (state.box) {

@@ -165,7 +165,7 @@ textarea {
 	width: calc(100% + 8px - 40px);
 }
 #map-canvas {
-	height: 400px;
+	height: unquote("min(calc(100vw + 8px - 40px), 400px)");
 	width: calc(100% + 8px - 40px);
 }
 footer {
