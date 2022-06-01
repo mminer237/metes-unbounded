@@ -2,14 +2,69 @@
 
 const legalDescriptionBox = document.getElementById("legal-description");
 const legalDescriptionError = document.getElementById("legal-description-error");
+const surveyDivisionInfo = document.getElementById("survey-division-info");
 const mapCanvas = document.getElementById("map-canvas");
 const mapContext = mapCanvas.getContext("2d");
 
 const instructions = {
 	"begin": {
 		matchWords: [/commencing/, /beginning (on|at)/],
-		function: () => { state.status = "begin"; },
-		type: "command"
+		function: () => { state.status = "begin"; }
+	},
+	"section": {
+		matchWords: [/section (\d+)/],
+		function: match => {
+			state.section = match[1];
+			state.status = "begin";
+		},
+		type: "part"
+	},
+	"township": {
+		matchWords: [/township (\d+) (n|s)[a-z]*( of the base line)?/],
+		function: match => {
+			state.township = `${match[1]} ${match[2].toUpperCase()}`;
+			state.status = "begin";
+		},
+		type: "part"
+	},
+	"range": {
+		matchWords: [/range (\d+) (e|w)[a-z]*/],
+		function: match => {
+			state.range = `${match[1]} ${match[2].toUpperCase()}`;
+			state.status = "begin";
+		},
+		type: "part"
+	},
+	"pm": {
+		matchWords: [/(\w+) (principal meridian|p\.m\.|pm)/],
+		function: match => {
+			state.pm = `${match[1]} Principal Meridian`;
+			state.status = "begin";
+		},
+		type: "part"
+	},
+	"corner": {
+		matchWords: [/corner/],
+		function: () => { state.status = "corner"; },
+		type: "point"
+	},
+	"quarter": {
+		matchWords: [/quarter/],
+		function: () => {
+			state.zoomBox("quarter", state.adjective);
+			state.status = "begin";
+			state.adjective = "";
+		},
+		type: "part"
+	},
+	"half": {
+		matchWords: [/half/],
+		function: () => {
+			state.zoomBox("half", state.adjective);
+			state.status = "begin";
+			state.adjective = "";
+		},
+		type: "part"
 	},
 	"north": {
 		matchWords: [/north/, /northerly/, /n/, /northward/, /northwards/],
@@ -51,34 +106,15 @@ const instructions = {
 		function: () => { state.adjective = "south-west"; },
 		type: "adjective"
 	},
-	"corner": {
-		matchWords: [/corner/],
-		function: () => { state.status = "corner"; },
-		type: "point"
-	},
-	"quarter": {
-		matchWords: [/quarter/],
-		function: () => {
-			state.zoomBox("quarter", state.adjective);
-			state.status = "begin";
-			state.adjective = "";
-		},
-		type: "part"
-	},
-	"half": {
-		matchWords: [/half/],
-		function: () => {
-			state.zoomBox("half", state.adjective);
-			state.status = "begin";
-			state.adjective = "";
-		},
-		type: "part"
+	"part of": {
+		matchWords: [/part of/],
+		function: () => {}
 	},
 	"of": {
 		matchWords: [/of/],
 		function: () => {},
 		type: "relational"
-	}
+	},
 };
 
 class Box {
@@ -108,7 +144,13 @@ class DescriptionState {
 	constructor() {
 		this.state = "";
 		this.adjective = "";
+		this.section = "";
+		this.township = "";
+		this.range = "";
+		this.pm = "";
 		this.box = null;
+		this.instructionBuffer = [[]];
+		this.instructionBufferIndex = 0;
 		this.steps = [];
 	}
 
@@ -177,7 +219,6 @@ function updateMap() {
 		legalDescription = legalDescription.replace(/[,.]/g, "");
 		const words = legalDescription.split(" ");
 		let wordBuffer = "";
-		let instructionBuffer = [[]];
 		try {
 			/* Parse words to instructions */
 			for (let i = 0; i < words.length; i++) {
@@ -193,25 +234,41 @@ function updateMap() {
 					console.log("Found instruction: " + instruction);
 					wordBuffer = "";
 					if (instructions[instruction].type === "relational") {
-						if (instructions[instructionBuffer[instructionBuffer.length - 1][instructionBuffer[instructionBuffer.length - 1].length - 1][0]].type === "part") {
-							instructionBuffer.push([[instruction, match]], []);
+						if (instructions[state.instructionBuffer[state.instructionBufferIndex][state.instructionBuffer[state.instructionBufferIndex].length - 1][0]].type === "part") {
+							state.instructionBuffer.splice(state.instructionBufferIndex, 0, [], [[instruction, match]]);
 						}
 					}
+					else if (instruction === "thence") {
+						state.instructionBufferIndex = state.instructionBuffer.length - 1;
+						state.instructionBuffer[state.instructionBufferIndex].push([instruction, match]);
+					}
 					else {
-						instructionBuffer[instructionBuffer.length - 1].push([instruction, match]);
+						state.instructionBuffer[state.instructionBufferIndex].push([instruction, match]);
 					}
 				}
 			}
 
 			/* Interpret instructions */
-			for (let i = instructionBuffer.length - 1; i >= 0; i--) {
-				instructionBuffer[i].forEach(([instruction, match]) => instructions[instruction].function(match));
+			for (let i = 0; i < state.instructionBuffer.length; i++) {
+				state.instructionBuffer[i].forEach(([instruction, match]) => instructions[instruction].function(match));
 			}
 
+			/* Add survey division info */
+			surveyDivisionInfo.innerText = [
+				state.section ? `Section ${state.section}` : "",
+				state.township ? `Township ${state.township}` : "",
+				state.range ? `Range ${state.range}` : "",
+				state.pm,
+			].filter(x => x).join(", ");
+			if (surveyDivisionInfo.innerText)
+				surveyDivisionInfo.style.display = "block";
+			else
+				surveyDivisionInfo.style.display = "none";
+
 			/* Draw map */
-			const scale = Math.min(350, mapCanvas.width);
+			const scale = Math.min(380, mapCanvas.width);
 			const xOffset = (mapCanvas.width - scale) / 2;
-			const yOffset = 25;
+			const yOffset = 10;
 			if (state.box) {
 				mapContext.strokeStyle = "gray";
 				mapContext.strokeRect(

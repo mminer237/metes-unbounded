@@ -164,6 +164,10 @@ textarea {
 	padding: 5px;
 	width: calc(100% + 8px - 40px);
 }
+#survey-division-info {
+	text-align: center;
+	width: 100%;
+}
 #map-canvas {
 	height: unquote("min(calc(100vw + 8px - 40px), 400px)");
 	width: calc(100% + 8px - 40px);
