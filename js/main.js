@@ -90,9 +90,9 @@ class Box {
 	}
 
 	draw(context, scale, xOffset = 0, yOffset = 0) {
-		const objectColor = getComputedStyle(document.body).getPropertyValue('--object-color');
-		context.strokeStyle = objectColor;
-		context.fillStyle = objectColor + "80";
+		const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-color');
+		context.strokeStyle = accentColor;
+		context.fillStyle = accentColor + "80";
 		context.rect(
 			xOffset + scale * this.left,
 			yOffset + scale * this.top,

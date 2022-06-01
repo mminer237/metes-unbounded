@@ -5,8 +5,8 @@
 	--background-color: white;
 	--section-background-color: white;
 	--accent-color: #ACDA88;
-	--object-color: #3E7321;
-	--object-hover-color: hsl(99, 45%, 41%);
+	--link-color: #3E7321;
+	--link-hover-color: hsl(99, 45%, 41%);
 	--error-color: hsl(18, 53%, 69%);
 	--box-shadow: 0 2px 5px 0 rgba(0,0,0,0.26);
 }
@@ -16,8 +16,8 @@
 		--background-color: #181818;
 		--section-background-color: #282828;
 		--accent-color: #3E7321;
-		--object-color: #ACDA88;
-		--object-hover-color: hsl(94, 53%, 79%);
+		--link-color: #ACDA88;
+		--link-hover-color: hsl(94, 53%, 79%);
 		--error-color: hsl(18, 45%, 29%);
 		--box-shadow: 0 3px 6px 0 rgba(0,0,0,0.35);
 	}
@@ -141,10 +141,10 @@ p:last-child {
 	margin-bottom: 0;
 }
 a {
-	color: var(--object-color);
+	color: var(--link-color);
 }
 a:hover {
-	color: var(--object-hover-color);
+	color: var(--link-hover-color);
 }
 .error {
 	background-color: var(--error-color);
