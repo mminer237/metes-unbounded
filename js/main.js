@@ -15,6 +15,7 @@ const instructions = {
 		matchWords: [/section (\d+)/],
 		function: match => {
 			state.section = match[1];
+			state.sectionScaleFeet = 5280;
 			state.status = "begin";
 		},
 		type: "part"
@@ -149,6 +150,7 @@ class DescriptionState {
 		this.range = "";
 		this.pm = "";
 		this.box = null;
+		this.sectionScaleFeet = null;
 		this.instructionBuffer = [[]];
 		this.instructionBufferIndex = 0;
 		this.steps = [];
