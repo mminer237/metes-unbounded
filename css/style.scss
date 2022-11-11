@@ -7,6 +7,7 @@
 	--accent-color: #ACDA88;
 	--link-color: #3E7321;
 	--link-hover-color: hsl(99, 45%, 41%);
+	--warning-color: hsl(51, 83%, 69%);
 	--error-color: hsl(18, 53%, 69%);
 	--box-shadow: 0 2px 5px 0 rgba(0,0,0,0.26);
 }
@@ -18,6 +19,7 @@
 		--accent-color: #3E7321;
 		--link-color: #ACDA88;
 		--link-hover-color: hsl(94, 53%, 79%);
+		--warning-color: hsl(51, 73%, 23%);
 		--error-color: hsl(18, 45%, 29%);
 		--box-shadow: 0 3px 6px 0 rgba(0,0,0,0.35);
 	}
@@ -145,6 +147,14 @@ a {
 }
 a:hover {
 	color: var(--link-hover-color);
+}
+.warning {
+	background-color: var(--warning-color);
+	box-shadow: var(--box-shadow);
+	padding: 5px;
+}
+.warning::before {
+	content: "⚠️";
 }
 .error {
 	background-color: var(--error-color);
