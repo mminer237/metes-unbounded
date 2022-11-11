@@ -50,7 +50,7 @@ const instructions = {
 		type: "point"
 	},
 	"quarter": {
-		matchWords: [/quarter/],
+		matchWords: [/quarter/, /1\/4/, /¼/],
 		function: () => {
 			state.zoomBox("quarter", state.adjective);
 			state.status = "begin";
@@ -59,7 +59,7 @@ const instructions = {
 		type: "part"
 	},
 	"half": {
-		matchWords: [/half/],
+		matchWords: [/half/, /1\/2/, /½/],
 		function: () => {
 			state.zoomBox("half", state.adjective);
 			state.status = "begin";
@@ -79,31 +79,41 @@ const instructions = {
 	},
 	"east": {
 		matchWords: [/east/, /easterly/, /e/, /eastward/, /eastwards/],
-		function: () => { state.adjective = "east"; },
+		function: () => {
+			if (state.adjective === "north" || state.adjective === "south")
+				state.adjective += "-east"
+			else
+				state.adjective = "east";
+		},
 		type: "adjective"
 	},
 	"west": {
 		matchWords: [/west/, /westerly/, /w/, /westward/, /westwards/],
-		function: () => { state.adjective = "west"; },
+		function: () => {
+			if (state.adjective === "north" || state.adjective === "south")
+				state.adjective += "-west"
+			else
+				state.adjective = "west";
+		},
 		type: "adjective"
 	},
 	"north-east": {
-		matchWords: [/north-east/, /north east/, /northeast/, /north-easterly/, /ne/],
+		matchWords: [/north-east/, /northeast/, /north-easterly/, /ne/],
 		function: () => { state.adjective = "north-east"; },
 		type: "adjective"
 	},
 	"north-west": {
-		matchWords: [/north-west/, /north west/, /northwest/, /northwesterly/, /nw/],
+		matchWords: [/north-west/, /northwest/, /northwesterly/, /nw/],
 		function: () => { state.adjective = "north-west"; },
 		type: "adjective"
 	},
 	"south-east": {
-		matchWords: [/south-east/, /south east/, /southeast/, /southeasterly/, /se/],
+		matchWords: [/south-east/, /southeast/, /southeasterly/, /se/],
 		function: () => { state.adjective = "south-east"; },
 		type: "adjective"
 	},
 	"south-west": {
-		matchWords: [/south-west/, /south west/, /southwest/, /southwesterly/, /sw/],
+		matchWords: [/south-west/, /southwest/, /southwesterly/, /sw/],
 		function: () => { state.adjective = "south-west"; },
 		type: "adjective"
 	},
@@ -229,9 +239,11 @@ function updateMap() {
 				let match;
 				const instruction = Object.keys(instructions).find(x =>
 					instructions[x].matchWords.some(matchWord =>
-						match = wordBuffer.match(new RegExp(String.raw`\b${matchWord.source}\b`, 'i'))
+						match = wordBuffer.match(new RegExp(String.raw`(?:^|\s|\b)(${matchWord.source})(?:$|\s|\b)`, 'iu'))
 					)
 				);
+				if (match)
+					match.shift();
 				if (instruction) {
 					console.log("Found instruction: " + instruction);
 					wordBuffer = "";
@@ -249,6 +261,7 @@ function updateMap() {
 					}
 				}
 			}
+			console.log(state.instructionBuffer);
 
 			/* Interpret instructions */
 			for (let i = 0; i < state.instructionBuffer.length; i++) {
