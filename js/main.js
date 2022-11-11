@@ -248,7 +248,7 @@ function updateMap() {
 					console.log("Found instruction: " + instruction);
 					wordBuffer = "";
 					if (instructions[instruction].type === "relational") {
-						if (instructions[state.instructionBuffer[state.instructionBufferIndex][state.instructionBuffer[state.instructionBufferIndex].length - 1][0]].type === "part") {
+						if (instructions[state.instructionBuffer[state.instructionBufferIndex][state.instructionBuffer[state.instructionBufferIndex].length - 1]?.[0]]?.type === "part") {
 							state.instructionBuffer.splice(state.instructionBufferIndex, 0, [], [[instruction, match]]);
 						}
 					}
