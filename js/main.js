@@ -52,7 +52,7 @@ const instructions = {
 	"quarter": {
 		matchWords: [/quarter/, /1\/4/, /¼/],
 		function: () => {
-			state.zoomBox("quarter", state.adjective);
+			state.currentTract.zoomBox("quarter", state.adjective);
 			state.status = "begin";
 			state.adjective = "";
 		},
@@ -61,7 +61,7 @@ const instructions = {
 	"half": {
 		matchWords: [/half/, /1\/2/, /½/],
 		function: () => {
-			state.zoomBox("half", state.adjective);
+			state.currentTract.zoomBox("half", state.adjective);
 			state.status = "begin";
 			state.adjective = "";
 		},
@@ -126,10 +126,24 @@ const instructions = {
 		function: () => {},
 		type: "relational"
 	},
+	"except": {
+		matchWords: [/except(ing)?/],
+		function: () => {
+			state.currentTract = state.tracts[state.tracts.indexOf(state.currentTract) + 1];
+		}
+	},
+	"include": {
+		matchWords: [/include(ing)?/],
+		function: () => {
+			state.currentTract = state.tracts[0];
+			state.excepting = false;
+		}
+	},
 };
 
 class Box {
-	constructor() {
+	constructor(tract) {
+		this.tract = tract;
 		this.top = 0;
 		this.right = 0;
 		this.bottom = 0;
@@ -138,8 +152,10 @@ class Box {
 
 	draw(context, scale, xOffset = 0, yOffset = 0) {
 		const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-color');
-		context.strokeStyle = accentColor;
-		context.fillStyle = accentColor + "80";
+		const exceptColor = getComputedStyle(document.body).getPropertyValue('--except-color');
+		context.strokeStyle = this.tract.excepting ? exceptColor : accentColor;
+		context.fillStyle = (this.tract.excepting ? exceptColor : accentColor) + "80";
+		context.beginPath();
 		context.rect(
 			xOffset + scale * this.left,
 			yOffset + scale * this.top,
@@ -151,24 +167,18 @@ class Box {
 	}
 }
 
-class DescriptionState {
+class Tract {
 	constructor() {
-		this.state = "";
-		this.adjective = "";
-		this.section = "";
-		this.township = "";
-		this.range = "";
-		this.pm = "";
 		this.box = null;
-		this.sectionScaleFeet = null;
 		this.instructionBuffer = [[]];
 		this.instructionBufferIndex = 0;
 		this.steps = [];
+		this.excepting = false;
 	}
 
 	zoomBox(part, adjective) {
 		if (!this.box)
-			this.box = new Box();
+			this.box = new Box(this);
 		switch (part) {
 			case "quarter":
 				switch (adjective) {
@@ -215,6 +225,20 @@ class DescriptionState {
 		}
 	}
 }
+
+class DescriptionState {
+	constructor() {
+		this.state = "";
+		this.adjective = "";
+		this.section = "";
+		this.township = "";
+		this.range = "";
+		this.pm = "";
+		this.sectionScaleFeet = null;
+		this.tracts = [new Tract()];
+		this.currentTract = this.tracts[0];
+	}
+}
 let state = new DescriptionState();
 
 function updateMap() {
@@ -248,24 +272,33 @@ function updateMap() {
 					console.log("Found instruction: " + instruction);
 					wordBuffer = "";
 					if (instructions[instruction].type === "relational") {
-						if (instructions[state.instructionBuffer[state.instructionBufferIndex][state.instructionBuffer[state.instructionBufferIndex].length - 1]?.[0]]?.type === "part") {
-							state.instructionBuffer.splice(state.instructionBufferIndex, 0, [], [[instruction, match]]);
+						if (instructions[state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex][state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].length - 1]?.[0]]?.type === "part") {
+							state.currentTract.instructionBuffer.splice(state.currentTract.instructionBufferIndex, 0, [], [[instruction, match]]);
 						}
 					}
+					else if (instruction === "except") {
+						state.tracts.push(new Tract());
+						state.currentTract = state.tracts[state.tracts.length - 1];
+						state.currentTract.excepting = true;
+						state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].push([instruction, match]);
+					}
 					else if (instruction === "thence") {
-						state.instructionBufferIndex = state.instructionBuffer.length - 1;
-						state.instructionBuffer[state.instructionBufferIndex].push([instruction, match]);
+						state.currentTract.instructionBufferIndex = state.currentTract.instructionBuffer.length - 1;
+						state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].push([instruction, match]);
 					}
 					else {
-						state.instructionBuffer[state.instructionBufferIndex].push([instruction, match]);
+						state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].push([instruction, match]);
 					}
 				}
 			}
-			console.log(state.instructionBuffer);
+			console.log(state.tracts);
 
 			/* Interpret instructions */
-			for (let i = 0; i < state.instructionBuffer.length; i++) {
-				state.instructionBuffer[i].forEach(([instruction, match]) => instructions[instruction].function(match));
+			state.currentTract = state.tracts[0];
+			for (let i = 0; i < state.tracts.length; i++) {
+				for (let j = 0; j < state.tracts[i].instructionBuffer.length; j++) {
+					state.tracts[i].instructionBuffer[j].forEach(([instruction, match]) => instructions[instruction].function(match));
+				}
 			}
 
 			/* Add survey division info */
@@ -284,18 +317,25 @@ function updateMap() {
 			const scale = Math.min(380, mapCanvas.width);
 			const xOffset = (mapCanvas.width - scale) / 2;
 			const yOffset = 10;
-			if (state.box) {
-				mapContext.strokeStyle = "gray";
-				mapContext.strokeRect(
-					xOffset,
-					yOffset,
-					scale,
-					scale
-				);
-				if (!state.steps.length)
-					state.box.draw(mapContext, scale, xOffset, yOffset);
+			for (let i = 0; i < state.tracts.length; i++) {
+				if (state.tracts[i].box) {
+					mapContext.strokeStyle = "gray";
+					mapContext.strokeRect(
+						xOffset,
+						yOffset,
+						scale,
+						scale
+					);
+					break;
+				}
 			}
-			state.steps.forEach(x => x[0].apply(null, x[1]));
+			for (let i = 0; i < state.tracts.length; i++) {
+				if (state.tracts[i].box) {
+					if (!state.tracts[i].steps.length)
+						state.tracts[i].box.draw(mapContext, scale, xOffset, yOffset);
+				}
+				state.tracts[i].steps.forEach(x => x[0].apply(null, x[1]));
+			}
 		} catch (e) {
 			legalDescriptionError.style.display = "block";
 			legalDescriptionError.innerHTML = "Error: " + e.message;
