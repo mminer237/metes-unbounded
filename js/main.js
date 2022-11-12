@@ -126,11 +126,14 @@ const instructions = {
 		function: () => {},
 		type: "relational"
 	},
+	"thereof": {
+		matchWords: [/thereof/],
+		function: () => {},
+		type: "relational"
+	},
 	"except": {
 		matchWords: [/except(ing)?/],
-		function: () => {
-			state.currentTract = state.tracts[state.tracts.indexOf(state.currentTract) + 1];
-		}
+		function: () => {}
 	},
 	"include": {
 		matchWords: [/include(ing)?/],
@@ -273,7 +276,13 @@ function updateMap() {
 					wordBuffer = "";
 					if (instructions[instruction].type === "relational") {
 						if (instructions[state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex][state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].length - 1]?.[0]]?.type === "part") {
-							state.currentTract.instructionBuffer.splice(state.currentTract.instructionBufferIndex, 0, [], [[instruction, match]]);
+							if (instruction === "thereof") {
+								state.currentTract.instructionBuffer.splice(state.currentTract.instructionBufferIndex, 0, ...state.tracts[0].instructionBuffer);
+								state.currentTract.instructionBufferIndex += state.tracts[0].instructionBuffer.length;
+							}
+							else {
+								state.currentTract.instructionBuffer.splice(state.currentTract.instructionBufferIndex, 0, [], [[instruction, match]]);
+							}
 						}
 					}
 					else if (instruction === "except") {
@@ -294,10 +303,13 @@ function updateMap() {
 			console.log(state.tracts);
 
 			/* Interpret instructions */
-			state.currentTract = state.tracts[0];
 			for (let i = 0; i < state.tracts.length; i++) {
+				state.currentTract = state.tracts[i];
 				for (let j = 0; j < state.tracts[i].instructionBuffer.length; j++) {
-					state.tracts[i].instructionBuffer[j].forEach(([instruction, match]) => instructions[instruction].function(match));
+					state.tracts[i].instructionBuffer[j].forEach(([instruction, match]) => {
+						console.log("Executing instruction: " + instruction);
+						return instructions[instruction].function(match);
+					})
 				}
 			}
 
