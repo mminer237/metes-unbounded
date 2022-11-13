@@ -136,11 +136,8 @@ const instructions = {
 		function: () => {}
 	},
 	"include": {
-		matchWords: [/include(ing)?/],
-		function: () => {
-			state.currentTract = state.tracts[0];
-			state.excepting = false;
-		}
+		matchWords: [/includ(e|ing)?/],
+		function: () => {}
 	},
 };
 
@@ -289,6 +286,11 @@ function updateMap() {
 						state.tracts.push(new Tract());
 						state.currentTract = state.tracts[state.tracts.length - 1];
 						state.currentTract.excepting = true;
+						state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].push([instruction, match]);
+					}
+					else if (instruction === "include") {
+						state.tracts.push(new Tract());
+						state.currentTract = state.tracts[state.tracts.length - 1];
 						state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].push([instruction, match]);
 					}
 					else if (instruction === "thence") {
