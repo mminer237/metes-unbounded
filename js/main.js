@@ -46,7 +46,55 @@ const instructions = {
 	},
 	"corner": {
 		matchWords: [/corner/],
-		function: () => { state.status = "corner"; },
+		function: () => {
+			state.status = "corner";
+			if (!state.adjective)
+				throw new Error("Invalid corner—no direction given.");
+			let x, y;
+			switch (state.adjective) {
+				case "north-east":
+					y = 0 + (state.currentTract.box?.top ?? 0);
+					x =	1 - (state.currentTract.box?.right ?? 0);
+					break;
+				case "north-west":
+					y = 0 + (state.currentTract.box?.top ?? 0);
+					x =	0 + (state.currentTract.box?.left ?? 0);
+					break;
+				case "south-east":
+					y = 1 - (state.currentTract.box?.bottom ?? 0);
+					x =	1 - (state.currentTract.box?.right ?? 0);
+					break;
+				case "south-west":
+					y = 1 - (state.currentTract.box?.bottom ?? 0);
+					x =	0 + (state.currentTract.box?.left ?? 0);
+					break;
+				default:
+					throw new Error("Invalid corner—" + adjective);
+			}
+			state.currentTract.steps.push([()=>{ state.moveTo(x, y); }, []])
+		},
+		type: "point"
+	},
+	"point": {
+		matchWords: [/point/],
+		function: () => {},
+		type: "point"
+	},
+	"iron rod": {
+		matchWords: [/iron (rod|pipe)( monument)?/],
+		function: () => {
+			state.currentTract.steps.push([()=>{
+				mapContext.fillStyle = "#a19d94";
+				mapContext.beginPath();
+				mapContext.arc(
+					...state.translatePoint(),
+					2,
+					0,
+					2 * Math.PI
+				);
+				mapContext.fill();
+			}, []]);
+		},
 		type: "point"
 	},
 	"quarter": {
@@ -123,6 +171,16 @@ const instructions = {
 	},
 	"of": {
 		matchWords: [/of/],
+		function: () => {},
+		type: "relational"
+	},
+	"at": {
+		matchWords: [/at/],
+		function: () => {},
+		type: "relational"
+	},
+	"on": {
+		matchWords: [/(up)?on/],
 		function: () => {},
 		type: "relational"
 	},
@@ -230,13 +288,36 @@ class DescriptionState {
 	constructor() {
 		this.state = "";
 		this.adjective = "";
+		this.cursorLocation = {x: null, y: null};
 		this.section = "";
 		this.township = "";
 		this.range = "";
 		this.pm = "";
 		this.sectionScaleFeet = null;
+		this.scale = null;
+		this.xOffset = null;
+		this.yOffset = null;
 		this.tracts = [new Tract()];
 		this.currentTract = this.tracts[0];
+	}
+
+	moveTo(x = this.cursorLocation.x, y = this.cursorLocation.y) {
+		mapContext.moveTo(x, y);
+		this.cursorLocation.x = x;
+		this.cursorLocation.y = y;
+	}
+
+	lineTo(x = this.cursorLocation.x, y = this.cursorLocation.y) {
+		mapContext.lineTo(x, y);
+		this.cursorLocation.x = x;
+		this.cursorLocation.y = y;
+	}
+
+	translatePoint(x = this.cursorLocation.x, y = this.cursorLocation.y) {
+		return [
+			this.xOffset + this.scale * x,
+			this.yOffset + this.scale * y
+		];
 	}
 }
 let state = new DescriptionState();
@@ -272,7 +353,10 @@ function updateMap() {
 					console.log("Found instruction: " + instruction);
 					wordBuffer = "";
 					if (instructions[instruction].type === "relational") {
-						if (instructions[state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex][state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].length - 1]?.[0]]?.type === "part") {
+						if (
+							instructions[state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex][state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].length - 1]?.[0]]?.type === "part" ||
+							instructions[state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex][state.currentTract.instructionBuffer[state.currentTract.instructionBufferIndex].length - 1]?.[0]]?.type === "point"
+						) {
 							if (instruction === "thereof") {
 								state.currentTract.instructionBuffer.splice(state.currentTract.instructionBufferIndex, 0, ...state.tracts[0].instructionBuffer);
 								state.currentTract.instructionBufferIndex += state.tracts[0].instructionBuffer.length;
@@ -328,17 +412,17 @@ function updateMap() {
 				surveyDivisionInfo.style.display = "none";
 
 			/* Draw map */
-			const scale = Math.min(380, mapCanvas.width);
-			const xOffset = (mapCanvas.width - scale) / 2;
-			const yOffset = 10;
+			state.scale = Math.min(380, mapCanvas.width);
+			state.xOffset = (mapCanvas.width - state.scale) / 2;
+			state.yOffset = 10;
 			for (let i = 0; i < state.tracts.length; i++) {
 				if (state.tracts[i].box) {
 					mapContext.strokeStyle = "gray";
 					mapContext.strokeRect(
-						xOffset,
-						yOffset,
-						scale,
-						scale
+						state.xOffset,
+						state.yOffset,
+						state.scale,
+						state.scale
 					);
 					break;
 				}
@@ -346,7 +430,7 @@ function updateMap() {
 			for (let i = 0; i < state.tracts.length; i++) {
 				if (state.tracts[i].box) {
 					if (!state.tracts[i].steps.length)
-						state.tracts[i].box.draw(mapContext, scale, xOffset, yOffset);
+						state.tracts[i].box.draw(mapContext, state.scale, state.xOffset, state.yOffset);
 				}
 				state.tracts[i].steps.forEach(x => x[0].apply(null, x[1]));
 			}
