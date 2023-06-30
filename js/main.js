@@ -14,6 +14,7 @@ const instructions = {
 	"end": {
 		matchWords: [/to the (true )?point of beginning/],
 		function: () => {
+			drawLine();
 			state.status = ""; 
 			mapContext.fill();
 		}
@@ -87,7 +88,7 @@ const instructions = {
 		type: "point"
 	},
 	"iron rod": {
-		matchWords: [/iron (rod|pipe)( monument)?/],
+		matchWords: [/iron (rod|pipe|pin)( monument)?/],
 		function: () => {
 			state.currentTract.steps.push([()=>{
 				mapContext.fillStyle = "#a19d94";
@@ -119,6 +120,13 @@ const instructions = {
 			state.direction = "";
 		},
 		type: "part"
+	},
+	"degrees": {
+	matchWords: [/(\d+\.?\d*) ?(°|d\w* ) ?(\d+\.?\d*) ?('|′|m\w* ) ?(\d+\.?\d*) ?("|″|s\w* ) ?(N|S|E|W)\w*/],
+		function: match => {
+			state.direction += ` ${match[1]}°${match[3] ? ` ${match[3]}′` : ""}${match[5] ? ` ${match[5]}″` : ""} ${match[7]}`;
+			drawLine();
+		}
 	},
 	"north": {
 		matchWords: [/north/, /northerly/, /n/, /northward/, /northwards/],
@@ -204,9 +212,90 @@ const instructions = {
 	},
 	"thence": {
 		matchWords: [/thence/],
-		function: () => {}
+		function: () => { drawLine(); }
+	},
+	"feet": {
+		matchWords: [/(\d+) (feet|foot|ft)/],
+		function: match => {
+			state.currentTract.steps.push([()=>{
+				state.distance = new Distance(match[1]);
+				drawLine();
+			}, []]);
+		}
+	},
+	"inches": {
+		matchWords: [/(\d+) (inch(es)?|in)/],
+		function: match => {
+			state.currentTract.steps.push([()=>{
+				if (!state.distance)
+					state.distance = new Distance(match[1] / 12);
+				else
+					state.distance.addFeet(match[1] / 12);
+				drawLine();
+			}, []]);
+		}
+	},
+	"chains": {
+		matchWords: [/(\d+) (chain|ch)s?/],
+		function: match => {
+			state.currentTract.steps.push([()=>{
+				state.distance = new Distance(match[1] * 66);
+				drawLine();
+			}, []]);
+		}
+	},
+	"links": {
+		matchWords: [/(\d+) (link|li|l)s?/],
+		function: match => {
+			state.currentTract.steps.push([()=>{
+				if (!state.distance)
+					state.distance = new Distance(match[1] * 0.66);
+				else
+					state.distance.addFeet(match[1] * 0.66);
+					drawLine();
+			}, []]);
+		}
+	},
+	"rods": {
+		matchWords: [/(\d+) (rod|r)s?/],
+		function: match => {
+			state.currentTract.steps.push([()=>{
+				state.distance = new Distance(match[1] * 16.5);
+				drawLine();
+			}, []]);
+		}
+	},
+	"meters": {
+		matchWords: [/(\d+) (meter|metre|m)s?/],
+		function: match => {
+			state.currentTract.steps.push([()=>{
+				state.distance = new Distance(match[1] * 3.28084);
+				drawLine();
+			}, []]);
+		}
 	},
 };
+
+function directionToRadians(direction) {
+	// TODO
+}
+
+function drawLine() {
+	if (state.distance && state.direction) {
+		if (state.status === "beginning") {
+			state.status = "drawing";
+			setStatusStyle();
+			mapContext.beginPath();
+		}
+		const currentPoint = state.translatePoint();
+		state.lineTo(
+			currentPoint[0] + state.distance.getPixels(state) * Math.cos(directionToRadians(state.direction)),
+			currentPoint[1] + state.distance.getPixels(state) * Math.sin(directionToRadians(state.direction))
+		);
+		state.direction = "";
+		state.distance = null;
+	}
+}
 
 function setStatusStyle() {
 	const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-color');
@@ -301,8 +390,12 @@ class Tract {
 }
 
 class Distance {
-	constructor() {
-		this.feet = 0;
+	constructor(feet = 0) {
+		this.feet = feet;
+	}
+
+	addFeet(feet) {
+		this.feet += feet;
 	}
 
 	getFeet() {
@@ -376,6 +469,8 @@ function updateMap() {
 		legalDescription = legalDescription.replace(/[,.;"]/g, "");
 		/* Remove parentheticals */
 		legalDescription = legalDescription.replace(/\(.*\)/g, "");
+		/* Convert non-breaking spaces to regular spaces */
+		legalDescription = legalDescription.replace(/\u00A0/g, " ");
 		const words = legalDescription.split(/\s+/);
 		let wordBuffer = "";
 		try {
