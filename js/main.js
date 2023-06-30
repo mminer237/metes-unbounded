@@ -6,6 +6,10 @@ const surveyDivisionInfo = document.getElementById("survey-division-info");
 const mapCanvas = document.getElementById("map-canvas");
 const mapContext = mapCanvas.getContext("2d");
 
+function titleCase(str) {
+	return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 const instructions = {
 	"begin": {
 		matchWords: [/commencing/, /beginning (on|at)/],
@@ -39,7 +43,7 @@ const instructions = {
 	"pm": {
 		matchWords: [/(\w+) (principal meridian|p\.m\.|pm)/],
 		function: match => {
-			state.pm = `${match[1]} Principal Meridian`;
+			state.pm = `${titleCase(match[1])} Principal Meridian`;
 			state.status = "begin";
 		},
 		type: "part"
