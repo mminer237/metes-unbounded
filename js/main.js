@@ -201,6 +201,10 @@ const instructions = {
 		matchWords: [/includ(e|ing)?/],
 		function: () => {}
 	},
+	"thence": {
+		matchWords: [/thence/],
+		function: () => {}
+	},
 };
 
 class Box {
