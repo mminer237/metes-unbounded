@@ -11,16 +11,22 @@ function titleCase(str) {
 }
 
 const instructions = {
+	"end": {
+		matchWords: [/to the (true )?point of beginning/],
+		function: () => {
+			state.status = ""; 
+			mapContext.fill();
+		}
+	},
 	"begin": {
 		matchWords: [/commencing/, /beginning (on|at)/],
-		function: () => { state.status = "begin"; }
+		function: () => { state.status = "beginning"; }
 	},
 	"section": {
 		matchWords: [/section (\d+)/],
 		function: match => {
 			state.section = match[1];
 			state.sectionScaleFeet = 5280;
-			state.status = "begin";
 		},
 		type: "part"
 	},
@@ -28,7 +34,6 @@ const instructions = {
 		matchWords: [/township (\d+) (n|s)[a-z]*( of the base line)?/],
 		function: match => {
 			state.township = `${match[1]} ${match[2].toUpperCase()}`;
-			state.status = "begin";
 		},
 		type: "part"
 	},
@@ -36,7 +41,6 @@ const instructions = {
 		matchWords: [/range (\d+) (e|w)[a-z]*/],
 		function: match => {
 			state.range = `${match[1]} ${match[2].toUpperCase()}`;
-			state.status = "begin";
 		},
 		type: "part"
 	},
@@ -44,18 +48,16 @@ const instructions = {
 		matchWords: [/(\w+) (principal meridian|p\.m\.|pm)/],
 		function: match => {
 			state.pm = `${titleCase(match[1])} Principal Meridian`;
-			state.status = "begin";
 		},
 		type: "part"
 	},
 	"corner": {
 		matchWords: [/corner/],
 		function: () => {
-			state.status = "corner";
-			if (!state.adjective)
+			if (!state.direction)
 				throw new Error("Invalid corner—no direction given.");
 			let x, y;
-			switch (state.adjective) {
+			switch (state.direction) {
 				case "north-east":
 					y = 0 + (state.currentTract.box?.top ?? 0);
 					x =	1 - (state.currentTract.box?.right ?? 0);
@@ -73,7 +75,7 @@ const instructions = {
 					x =	0 + (state.currentTract.box?.left ?? 0);
 					break;
 				default:
-					throw new Error("Invalid corner—" + adjective);
+					throw new Error("Invalid corner—" + direction);
 			}
 			state.currentTract.steps.push([()=>{ state.moveTo(x, y); }, []])
 		},
@@ -97,6 +99,7 @@ const instructions = {
 					2 * Math.PI
 				);
 				mapContext.fill();
+				setStatusStyle(mapContext, state.status);
 			}, []]);
 		},
 		type: "point"
@@ -104,70 +107,68 @@ const instructions = {
 	"quarter": {
 		matchWords: [/quarter/, /1\/4/, /¼/],
 		function: () => {
-			state.currentTract.zoomBox("quarter", state.adjective);
-			state.status = "begin";
-			state.adjective = "";
+			state.currentTract.zoomBox("quarter", state.direction);
+			state.direction = "";
 		},
 		type: "part"
 	},
 	"half": {
 		matchWords: [/half/, /1\/2/, /½/],
 		function: () => {
-			state.currentTract.zoomBox("half", state.adjective);
-			state.status = "begin";
-			state.adjective = "";
+			state.currentTract.zoomBox("half", state.direction);
+			state.direction = "";
 		},
 		type: "part"
 	},
 	"north": {
 		matchWords: [/north/, /northerly/, /n/, /northward/, /northwards/],
-		function: () => { state.adjective = "north"; },
-		type: "adjective"
+		function: () => { state.direction = "north"; },
+		type: "direction"
 	},
 	"south": {
 		matchWords: [/south/, /southerly/, /s/, /southward/, /southwards/],
-		function: () => { state.adjective = "south"; },
-		type: "adjective"
+		function: () => { state.direction = "south"; },
+		type: "direction"
 	},
 	"east": {
 		matchWords: [/east/, /easterly/, /e/, /eastward/, /eastwards/],
 		function: () => {
-			if (state.adjective === "north" || state.adjective === "south")
-				state.adjective += "-east"
+			if (state.direction === "north" || state.direction === "south")
+				state.direction += "-east"
 			else
-				state.adjective = "east";
+				state.direction = "east";
 		},
-		type: "adjective"
+		type: "direction"
 	},
 	"west": {
 		matchWords: [/west/, /westerly/, /w/, /westward/, /westwards/],
 		function: () => {
-			if (state.adjective === "north" || state.adjective === "south")
-				state.adjective += "-west"
+			if (state.direction === "north" || state.direction === "south")
+				state.direction += "-west"
 			else
-				state.adjective = "west";
+				state.direction = "west";
 		},
-		type: "adjective"
+		type: "direction"
 	},
 	"north-east": {
 		matchWords: [/north-east/, /northeast/, /north-easterly/, /ne/],
-		function: () => { state.adjective = "north-east"; },
-		type: "adjective"
+		function: () => { state.direction = "north-east"; },
+		type: "direction"
 	},
 	"north-west": {
 		matchWords: [/north-west/, /northwest/, /northwesterly/, /nw/],
-		function: () => { state.adjective = "north-west"; },
-		type: "adjective"
+		function: () => { state.direction = "north-west"; },
+		type: "direction"
 	},
 	"south-east": {
 		matchWords: [/south-east/, /southeast/, /southeasterly/, /se/],
-		function: () => { state.adjective = "south-east"; },
-		type: "adjective"
+		function: () => { state.direction = "south-east"; },
+		type: "direction"
 	},
 	"south-west": {
 		matchWords: [/south-west/, /southwest/, /southwesterly/, /sw/],
-		function: () => { state.adjective = "south-west"; },
-		type: "adjective"
+		function: () => { state.direction = "south-west"; },
+		type: "direction"
 	},
 	"part of": {
 		matchWords: [/part of/],
@@ -207,6 +208,13 @@ const instructions = {
 	},
 };
 
+function setStatusStyle() {
+	const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-color');
+	const exceptColor = getComputedStyle(document.body).getPropertyValue('--except-color');
+	mapContext.strokeStyle = state.status === "drawing" ? accentColor : exceptColor;
+	mapContext.fillStyle = (state.status === "drawing" ? accentColor : exceptColor) + "80";
+}
+
 class Box {
 	constructor(tract) {
 		this.tract = tract;
@@ -242,12 +250,12 @@ class Tract {
 		this.excepting = false;
 	}
 
-	zoomBox(part, adjective) {
+	zoomBox(part, direction) {
 		if (!this.box)
 			this.box = new Box(this);
 		switch (part) {
 			case "quarter":
-				switch (adjective) {
+				switch (direction) {
 					case "north-east":
 						this.box.bottom +=  (1 - this.box.top - this.box.bottom) / 2;
 						this.box.left += (1 - this.box.left - this.box.right) / 2;
@@ -265,11 +273,11 @@ class Tract {
 						this.box.right += (1 - this.box.left - this.box.right) / 2;
 						break;
 					default:
-						throw new Error("Invalid quarter—" + (adjective ? adjective + " is not a valid quarter." : "no direction given."));
+						throw new Error("Invalid quarter—" + (direction ? direction + " is not a valid quarter." : "no direction given."));
 				}
 				break;
 			case "half":
-				switch (adjective) {
+				switch (direction) {
 					case "north":
 						this.box.bottom +=  (1 - this.box.top - this.box.bottom) / 2;
 						break;
@@ -283,7 +291,7 @@ class Tract {
 						this.box.right += (1 - this.box.left - this.box.right) / 2;
 						break;
 					default:
-						throw new Error("Invalid half—" + (adjective ? adjective + " is not a valid half." : "no direction given."));
+						throw new Error("Invalid half—" + (direction ? direction + " is not a valid half." : "no direction given."));
 				}
 				break;
 			default:
@@ -292,17 +300,40 @@ class Tract {
 	}
 }
 
+class Distance {
+	constructor() {
+		this.feet = 0;
+	}
+
+	getFeet() {
+		return this.feet;
+	}
+
+	getPixels(state) {
+		return this.feet / state.sectionScaleFeet * state.scale;
+	}
+}
+
 class DescriptionState {
 	constructor() {
 		this.state = "";
-		this.adjective = "";
+		this.direction = "";
+		this.distance = null;
 		this.cursorLocation = {x: null, y: null};
 		this.section = "";
 		this.township = "";
 		this.range = "";
 		this.pm = "";
+		/**
+		 * Width of the canvas in feet
+		 * @type {number?}
+		 */
 		this.sectionScaleFeet = null;
-		this.scale = null;
+		/**
+		 * Width of the canvas in pixels
+		 * @type {number?}
+		 */
+		this.scale = null; 
 		this.xOffset = null;
 		this.yOffset = null;
 		this.tracts = [new Tract()];
@@ -342,7 +373,7 @@ function updateMap() {
 	if (legalDescription.length > 0) {
 		state = new DescriptionState();
 		legalDescription = legalDescription.replace(/[,.]/g, "");
-		const words = legalDescription.split(" ");
+		const words = legalDescription.split(/\s+/);
 		let wordBuffer = "";
 		try {
 			/* Parse words to instructions */
