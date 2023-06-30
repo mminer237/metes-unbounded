@@ -372,7 +372,10 @@ function updateMap() {
 
 	if (legalDescription.length > 0) {
 		state = new DescriptionState();
-		legalDescription = legalDescription.replace(/[,.]/g, "");
+		/* Remove unneeded punctuation */
+		legalDescription = legalDescription.replace(/[,.;"]/g, "");
+		/* Remove parentheticals */
+		legalDescription = legalDescription.replace(/\(.*\)/g, "");
 		const words = legalDescription.split(/\s+/);
 		let wordBuffer = "";
 		try {
