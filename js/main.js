@@ -468,7 +468,7 @@ function updateMap() {
 		/* Remove unneeded punctuation */
 		legalDescription = legalDescription.replace(/[,.;"]/g, "");
 		/* Remove parentheticals */
-		legalDescription = legalDescription.replace(/\(.*\)/g, "");
+		legalDescription = legalDescription.replace(/\(.*?\)/g, "");
 		/* Convert non-breaking spaces to regular spaces */
 		legalDescription = legalDescription.replace(/\u00A0/g, " ");
 		const words = legalDescription.split(/\s+|(?<=[A-z])(?=\d|½|¼)/);
