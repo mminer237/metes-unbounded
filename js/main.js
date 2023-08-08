@@ -203,11 +203,11 @@ const instructions = {
 		type: "relational"
 	},
 	"except": {
-		matchWords: [/except(ing)?/],
+		matchWords: [/(also )?except(ing)?/],
 		function: () => {}
 	},
 	"include": {
-		matchWords: [/includ(e|ing)?/],
+		matchWords: [/^and/, /also/, /includ(e|ing)?/],
 		function: () => {}
 	},
 	"thence": {
