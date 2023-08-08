@@ -471,7 +471,7 @@ function updateMap() {
 		legalDescription = legalDescription.replace(/\(.*\)/g, "");
 		/* Convert non-breaking spaces to regular spaces */
 		legalDescription = legalDescription.replace(/\u00A0/g, " ");
-		const words = legalDescription.split(/\s+/);
+		const words = legalDescription.split(/\s+|(?<=[A-z])(?=\d|½|¼)/);
 		let wordBuffer = "";
 		try {
 			/* Parse words to instructions */
