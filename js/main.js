@@ -1,10 +1,13 @@
 "use strict"
 
-const legalDescriptionBox = document.getElementById("legal-description");
+const legalDescriptionBox = $("#legal-description");
 const legalDescriptionError = document.getElementById("legal-description-error");
 const surveyDivisionInfo = document.getElementById("survey-division-info");
 const mapCanvas = document.getElementById("map-canvas");
 const mapContext = mapCanvas.getContext("2d");
+document.documentElement.style.overflowY = "scroll";
+document.documentElement.style.setProperty('--scrollbar-width', (window.innerWidth - document.documentElement.offsetWidth) + 'px');
+document.documentElement.style.removeProperty('overflow-y');
 
 function titleCase(str) {
 	return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -301,7 +304,7 @@ function setStatusStyle() {
 	const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-color');
 	const exceptColor = getComputedStyle(document.body).getPropertyValue('--except-color');
 	mapContext.strokeStyle = state.status === "drawing" ? accentColor : exceptColor;
-	mapContext.fillStyle = (state.status === "drawing" ? accentColor : exceptColor) + "80";
+	mapContext.fillStyle = (state.status === "drawing" ? accentColor : exceptColor) + "A0";
 }
 
 class Box {
@@ -453,10 +456,13 @@ class DescriptionState {
 	}
 }
 let state = new DescriptionState();
+let highlightRanges = [];
+const getHighlightRanges = () => highlightRanges;
 
 function updateMap() {
 	legalDescriptionError.style.display = "none";
-	let legalDescription = legalDescriptionBox.value;
+	const rawLegalDescription = legalDescriptionBox.val();
+	let legalDescription = rawLegalDescription;
 	mapContext.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
 	const width =  window.getComputedStyle(mapCanvas, null).getPropertyValue("width");
 	mapCanvas.setAttribute('width', width);
@@ -473,6 +479,7 @@ function updateMap() {
 		legalDescription = legalDescription.replace(/\u00A0/g, " ");
 		const words = legalDescription.split(/\s+|(?<=[A-z])(?=\d|½|¼)/);
 		let wordBuffer = "";
+		highlightRanges = [];
 		try {
 			/* Parse words to instructions */
 			for (let i = 0; i < words.length; i++) {
@@ -484,8 +491,64 @@ function updateMap() {
 						match = wordBuffer.match(new RegExp(String.raw`(?:^|\s|\b)(${matchWord.source})(?:$|\s|\b)`, 'iu'))
 					)
 				);
-				if (match)
+
+				if (match) {
+					/* Set to highlight the matched word */
+					const matchBreaks = (match[0].trim().match(/\s+/g)?.length ?? 0) + i;
+					let boxBreaks = 0;
+					let startingIndex;
+					let endingIndex = 0;
+					let parenthetical = false;
+					let lastWasLetter = false;
+					let lastWasSpace = false;
+					for (; endingIndex < rawLegalDescription.length; endingIndex++) {
+						if (rawLegalDescription[endingIndex] === "(") {
+							parenthetical = true;
+						}
+						else if (rawLegalDescription[endingIndex] === ")") {
+							parenthetical = false;
+						}
+						if (!parenthetical) {
+							if (rawLegalDescription[endingIndex].match(/[A-z]/)) {
+								lastWasLetter = true;
+								lastWasSpace = false;
+							}
+							else if (rawLegalDescription[endingIndex].match(/\d|½|¼/)) {
+								if (lastWasLetter) {
+									boxBreaks++;
+									if (boxBreaks === matchBreaks) {
+										startingIndex = endingIndex;
+									}
+									else if (startingIndex)
+										break;
+									lastWasLetter = false;
+								}
+								lastWasSpace = false;
+							}
+							else if (rawLegalDescription[endingIndex] === " ") {
+								if (!lastWasSpace) {
+									boxBreaks++;
+									if (boxBreaks === matchBreaks) {
+										startingIndex = endingIndex + 1;
+									}
+									else if (startingIndex)
+										break;
+									lastWasSpace = true;
+								}
+								lastWasLetter = false;
+							}
+							else {
+								lastWasSpace = false;
+								lastWasLetter = false;
+							}
+						}
+					}
+					highlightRanges.push([startingIndex, endingIndex]);
+
+					/* Remove the matched phrase, leaving only the capture groups */
 					match.shift();
+				}
+
 				if (instruction) {
 					console.log("Found instruction: " + instruction);
 					wordBuffer = "";
@@ -523,6 +586,7 @@ function updateMap() {
 					}
 				}
 			}
+			legalDescriptionBox.highlightWithinTextarea('update');
 			console.log(state.tracts);
 
 			/* Interpret instructions */
@@ -578,5 +642,13 @@ function updateMap() {
 		}
 	}
 }
-legalDescriptionBox.addEventListener("input", updateMap);
+legalDescriptionBox.on("input", updateMap);
+legalDescriptionBox.highlightWithinTextarea({
+	highlight: getHighlightRanges
+});
+const hwtContainer = document.getElementsByClassName("hwt-container")[0];
+new ResizeObserver(() => {
+	hwtContainer.style.width = legalDescriptionBox[0].offsetWidth + 28 + "px";
+	hwtContainer.style.height = legalDescriptionBox[0].offsetHeight + 20 + "px";
+}).observe(legalDescriptionBox[0]);
 updateMap();

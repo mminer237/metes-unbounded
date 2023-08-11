@@ -5,6 +5,8 @@
 	--background-color: white;
 	--section-background-color: white;
 	--accent-color: #ACDA88;
+	--mark-color: #ACDA88A0;
+	--mark-border: 1px solid #ACDA88;
 	--except-color: #DA9A86;
 	--link-color: #3E7321;
 	--link-hover-color: hsl(99, 45%, 41%);
@@ -18,6 +20,8 @@
 		--background-color: #181818;
 		--section-background-color: #282828;
 		--accent-color: #3E7321;
+		--mark-color: #3E7321A0;
+		--mark-border: 1px solid #3E7321;
 		--except-color: #733421;
 		--link-color: #ACDA88;
 		--link-hover-color: hsl(94, 53%, 79%);
@@ -174,7 +178,47 @@ textarea {
 	font-size: 12pt;
 	margin: 10px;
 	padding: 5px;
-	width: calc(100% + 8px - 40px);
+	overflow-y: scroll;
+	width: calc(100% - 40px);
+}
+.hwt-container {
+	display: inline-block;
+	height: calc(8rem + 32px);
+	overflow: hidden;
+	-webkit-text-size-adjust: none !important;
+	width: 100%;
+}
+.hwt-backdrop {
+	position: absolute !important;
+	top: 6px;
+	right: -5px;
+	bottom: 6px;
+	left: 6px;
+	margin: 5px 21px 5px 5px !important;
+	overflow-x: hidden;
+	overflow-y: hidden;
+}
+.hwt-highlights {
+	background-color: var(--background-color);
+	color: transparent !important;
+	height: 100%;
+	padding: 5px !important;
+	padding-right: calc(var(--scrollbar-width) + 7px) !important;
+	white-space: pre-wrap !important;
+	word-wrap: break-word !important;
+}
+textarea.hwt-content {
+	background-color: transparent !important;
+	height: calc(100% - 32px);
+}
+.hwt-content mark {
+	border: var(--mark-border);
+	color: transparent;
+	margin: -1px;
+	padding: 0 !important;
+}
+mark {
+	background-color: var(--mark-color);
 }
 #survey-division-info {
 	text-align: center;
