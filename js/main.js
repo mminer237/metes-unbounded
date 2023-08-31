@@ -543,7 +543,8 @@ function updateMap() {
 							}
 						}
 					}
-					highlightRanges.push([startingIndex, endingIndex]);
+					if (startingIndex)
+						highlightRanges.push([startingIndex, endingIndex]);
 
 					/* Remove the matched phrase, leaving only the capture groups */
 					match.shift();
