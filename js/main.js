@@ -137,7 +137,7 @@ const instructions = {
 		type: "direction"
 	},
 	"south": {
-		matchWords: [/south/, /southerly/, /s/, /southward/, /southwards/],
+		matchWords: [/south/, /southerly/, /(^| )s/, /southward/, /southwards/],
 		function: () => { state.direction = "south"; },
 		type: "direction"
 	},
@@ -477,7 +477,7 @@ function updateMap() {
 		legalDescription = legalDescription.replace(/\(.*?\)/g, "");
 		/* Convert non-breaking spaces to regular spaces */
 		legalDescription = legalDescription.replace(/\u00A0/g, " ");
-		const words = legalDescription.split(/\s+|(?<=[A-z])(?=\d|½|¼)/);
+		const words = legalDescription.split(/\s+|(?<=[\p{L}\p{M}])(?=\d|½|¼)/u);
 		let wordBuffer = "";
 		highlightRanges = [];
 		try {
@@ -507,9 +507,15 @@ function updateMap() {
 						}
 						else if (rawLegalDescription[endingIndex] === ")") {
 							parenthetical = false;
+							if (startingIndex === endingIndex) {
+								startingIndex++;
+							}
+						}
+						if (parenthetical && startingIndex === endingIndex) {
+							startingIndex++;
 						}
 						if (!parenthetical) {
-							if (rawLegalDescription[endingIndex].match(/[A-z]/)) {
+							if (rawLegalDescription[endingIndex].match(/[\p{L}\p{M}]/u)) {
 								lastWasLetter = true;
 								lastWasSpace = false;
 							}
@@ -535,10 +541,13 @@ function updateMap() {
 										break;
 									lastWasSpace = true;
 								}
+								else {
+									if (startingIndex)
+										startingIndex++;
+								}
 								lastWasLetter = false;
 							}
 							else {
-								lastWasSpace = false;
 								lastWasLetter = false;
 							}
 						}
