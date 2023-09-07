@@ -494,7 +494,8 @@ function updateMap() {
 
 				if (match) {
 					/* Set to highlight the matched word */
-					const matchBreaks = (match[0].trim().match(/\s+/g)?.length ?? 0) + i;
+					const matchBreaks = (match[0].trim().match(/\s+/g)?.length ?? 0);
+					console.log(match[0].trim().split(/\s+/g));
 					let boxBreaks = 0;
 					let startingIndex;
 					let endingIndex = 0;
@@ -522,10 +523,10 @@ function updateMap() {
 							else if (rawLegalDescription[endingIndex].match(/\d|½|¼/)) {
 								if (lastWasLetter) {
 									boxBreaks++;
-									if (boxBreaks === matchBreaks) {
+									if (boxBreaks === i - matchBreaks) {
 										startingIndex = endingIndex;
 									}
-									else if (startingIndex)
+									else if (startingIndex && boxBreaks === i + 1)
 										break;
 									lastWasLetter = false;
 								}
@@ -534,10 +535,10 @@ function updateMap() {
 							else if (rawLegalDescription[endingIndex] === " ") {
 								if (!lastWasSpace) {
 									boxBreaks++;
-									if (boxBreaks === matchBreaks) {
+									if (boxBreaks === i - matchBreaks) {
 										startingIndex = endingIndex + 1;
 									}
-									else if (startingIndex)
+									else if (startingIndex && boxBreaks === i + 1)
 										break;
 									lastWasSpace = true;
 								}
