@@ -17,7 +17,6 @@ const instructions = {
 	"end": {
 		matchWords: [/to the (true )?point of beginning/],
 		function: () => {
-			drawLine();
 			state.status = ""; 
 			mapContext.fill();
 		}
@@ -81,7 +80,7 @@ const instructions = {
 				default:
 					throw new Error("Invalid corner—" + direction);
 			}
-			state.currentTract.steps.push([()=>{ state.moveTo(x, y); }, []])
+			state.currentTract.steps.push([()=>{ state.moveTo(...state.translatePoint(x, y)); }, []]);
 		},
 		type: "point"
 	},
@@ -97,13 +96,35 @@ const instructions = {
 				mapContext.fillStyle = "#a19d94";
 				mapContext.beginPath();
 				mapContext.arc(
-					...state.translatePoint(),
+					state.cursorLocation.x,
+					state.cursorLocation.y,
 					2,
 					0,
 					2 * Math.PI
 				);
+				console.log(`Drawing iron rod at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
 				mapContext.fill();
-				setStatusStyle(mapContext, state.status);
+				setStatusStyle();
+			}, []]);
+		},
+		type: "point"
+	},
+	"stone": {
+		matchWords: [/stone(( survey)? monument)?/],
+		function: () => {
+			state.currentTract.steps.push([()=>{
+				mapContext.fillStyle = "#a1a1a4";
+				mapContext.beginPath();
+				mapContext.arc(
+					state.cursorLocation.x,
+					state.cursorLocation.y,
+					2,
+					0,
+					2 * Math.PI
+				);
+				console.log(`Drawing stone at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
+				mapContext.fill();
+				setStatusStyle();
 			}, []]);
 		},
 		type: "point"
@@ -125,20 +146,30 @@ const instructions = {
 		type: "part"
 	},
 	"degrees": {
-	matchWords: [/(\d+\.?\d*) ?(°|d\w* ) ?(\d+\.?\d*) ?('|′|m\w* ) ?(\d+\.?\d*) ?("|″|s\w* ) ?(N|S|E|W)\w*/],
+		matchWords: [/(\d+\.?\d*) ?(°|d\w* ) ?(?:(\d+\.?\d*) ?('|′|m\w* ))? ?(?:(\d+\.?\d*) ?("|″|s\w* ))? ?(N|S|E|W)\w*/],
 		function: match => {
-			state.direction += ` ${match[1]}°${match[3] ? ` ${match[3]}′` : ""}${match[5] ? ` ${match[5]}″` : ""} ${match[7]}`;
-			drawLine();
+			const direction = `${state.direction} ${match[1]}°${match[3] ? `${match[3]}′` : ""}${match[5] ? `${match[5]}″` : ""} ${match[7].toUpperCase()}`;
+			state.direction = direction;
+			if (state.distance)
+				queueLine();
 		}
 	},
 	"north": {
 		matchWords: [/north/, /northerly/, /n/, /northward/, /northwards/],
-		function: () => { state.direction = "north"; },
+		function: () => {
+			state.direction = "north";
+			if (state.distance)
+				queueLine();
+		},
 		type: "direction"
 	},
 	"south": {
 		matchWords: [/south/, /southerly/, /(^| )s/, /southward/, /southwards/],
-		function: () => { state.direction = "south"; },
+		function: () => {
+			state.direction = "south";
+			if (state.distance)
+				queueLine();
+		},
 		type: "direction"
 	},
 	"east": {
@@ -146,8 +177,11 @@ const instructions = {
 		function: () => {
 			if (state.direction === "north" || state.direction === "south")
 				state.direction += "-east"
-			else
+			else {
 				state.direction = "east";
+				if (state.distance)
+					queueLine();
+			}
 		},
 		type: "direction"
 	},
@@ -156,8 +190,11 @@ const instructions = {
 		function: () => {
 			if (state.direction === "north" || state.direction === "south")
 				state.direction += "-west"
-			else
+			else {
 				state.direction = "west";
+				if (state.distance)
+					queueLine();
+			}
 		},
 		type: "direction"
 	},
@@ -215,96 +252,142 @@ const instructions = {
 	},
 	"thence": {
 		matchWords: [/thence/],
-		function: () => { drawLine(); }
+		function: () => {}
 	},
 	"feet": {
 		matchWords: [/(\d+) (feet|foot|ft)/],
 		function: match => {
-			state.currentTract.steps.push([()=>{
-				state.distance = new Distance(match[1]);
-				drawLine();
-			}, []]);
+			state.distance = new Distance(parseFloat(match[1]));
+			if (state.direction)
+				queueLine();
 		}
 	},
 	"inches": {
 		matchWords: [/(\d+) (inch(es)?|in)/],
 		function: match => {
-			state.currentTract.steps.push([()=>{
-				if (!state.distance)
-					state.distance = new Distance(match[1] / 12);
-				else
-					state.distance.addFeet(match[1] / 12);
-				drawLine();
-			}, []]);
+			if (!state.distance)
+				state.distance = new Distance(match[1] / 12);
+			else
+				state.distance.addFeet(match[1] / 12);
+			if (state.direction)
+				queueLine();
 		}
 	},
 	"chains": {
 		matchWords: [/(\d+) (chain|ch)s?/],
 		function: match => {
-			state.currentTract.steps.push([()=>{
-				state.distance = new Distance(match[1] * 66);
-				drawLine();
-			}, []]);
+			state.distance = new Distance(match[1] * 66);
+			if (state.direction)
+				queueLine();
 		}
 	},
 	"links": {
 		matchWords: [/(\d+) (link|li|l)s?/],
 		function: match => {
-			state.currentTract.steps.push([()=>{
-				if (!state.distance)
-					state.distance = new Distance(match[1] * 0.66);
-				else
-					state.distance.addFeet(match[1] * 0.66);
-					drawLine();
-			}, []]);
+			if (!state.distance)
+				state.distance = new Distance(match[1] * 0.66);
+			else
+				state.distance.addFeet(match[1] * 0.66);
+			if (state.direction)
+				queueLine();
 		}
 	},
 	"rods": {
 		matchWords: [/(\d+) (rod|r)s?/],
 		function: match => {
-			state.currentTract.steps.push([()=>{
-				state.distance = new Distance(match[1] * 16.5);
-				drawLine();
-			}, []]);
+			state.distance = new Distance(match[1] * 16.5);
+			if (state.direction)
+				queueLine();
 		}
 	},
 	"meters": {
 		matchWords: [/(\d+) (meter|metre|m)s?/],
 		function: match => {
-			state.currentTract.steps.push([()=>{
-				state.distance = new Distance(match[1] * 3.28084);
-				drawLine();
-			}, []]);
+			state.distance = new Distance(match[1] * 3.28084);
+			if (state.direction)
+				queueLine();
 		}
 	},
 };
 
-function directionToRadians(direction) {
-	// TODO
+function queueLine() {
+	const initialize = state.status !== "drawing";
+	const distance = state.distance.clone();
+	const direction = state.direction;
+	state.currentTract.steps.push([() => {
+		drawLine(initialize, distance, direction);
+	}, []]);
+	state.distance = null;
+	state.direction = "";
 }
 
-function drawLine() {
-	if (state.distance && state.direction) {
-		if (state.status === "beginning") {
-			state.status = "drawing";
-			setStatusStyle();
-			mapContext.beginPath();
-		}
-		const currentPoint = state.translatePoint();
-		state.lineTo(
-			currentPoint[0] + state.distance.getPixels(state) * Math.cos(directionToRadians(state.direction)),
-			currentPoint[1] + state.distance.getPixels(state) * Math.sin(directionToRadians(state.direction))
-		);
-		state.direction = "";
-		state.distance = null;
+function directionToRadians(direction) {
+	const directionParts = direction.split(" ");
+	let radians = cardinalDirectionToRadians(directionParts);
+
+	const matches = directionParts[1]?.match(/(\d+)°(?:(\d+)′)?(?:(\d+)″)?/u);
+	if (matches && directionParts[2]) {
+		const angleDifference = ((cardinalDirectionToRadians(directionParts[2]) + Math.PI * 2) % (Math.PI * 2) - radians) % Math.PI;
+		if (angleDifference == 0)
+			throw new Error(`${directionParts[0].charAt(0).toUpperCase() + directionParts[0].slice(1)} can't be modified by parallel direction ${directionParts[2]}`);
+		const right = angleDifference > 0;
+
+		let angle = parseInt(matches[1]);
+		if (matches[2])
+			angle += parseInt(matches[2]) / 60;
+		if (matches[3])
+			angle += parseInt(matches[3]) / 3600;
+		radians += angle * Math.PI / 180 * (right ? 1 : -1);
 	}
+
+	return radians;
+}
+
+function cardinalDirectionToRadians(directionParts, radians) {
+	switch (directionParts[0]) {
+		case "north":
+		case "N":
+			return Math.PI;
+		case "north-east":
+			return Math.PI * 3 / 4;
+		case "east":
+		case "E":
+			return Math.PI / 2;
+		case "south-east":
+			return Math.PI / 4;
+		case "south":
+		case "S":
+			return 0;
+		case "south-west":
+			return -Math.PI / 4;
+		case "west":
+		case "W":
+			return -Math.PI / 2;
+		case "north-west":
+			return -Math.PI * 3 / 4;
+		default:
+			throw new Error("Invalid direction: " + directionParts[0]);
+	}
+}
+
+function drawLine(initialize, distance, direction) {
+	if (initialize) {
+		setStatusStyle();
+		mapContext.beginPath();
+		state.moveTo();
+	}
+	const currentPoint = state.cursorLocation;
+	state.lineTo(
+		currentPoint.x + distance.getPixels(state) * Math.sin(directionToRadians(direction)),
+		currentPoint.y + distance.getPixels(state) * Math.cos(directionToRadians(direction))
+	);
 }
 
 function setStatusStyle() {
 	const accentColor = getComputedStyle(document.body).getPropertyValue('--accent-color');
 	const exceptColor = getComputedStyle(document.body).getPropertyValue('--except-color');
-	mapContext.strokeStyle = state.status === "drawing" ? accentColor : exceptColor;
-	mapContext.fillStyle = (state.status === "drawing" ? accentColor : exceptColor) + "A0";
+	mapContext.strokeStyle = state.currentTract.excepting ? exceptColor : accentColor;
+	mapContext.fillStyle = (state.currentTract.excepting ? exceptColor : accentColor) + "A0";
 }
 
 class Box {
@@ -330,6 +413,7 @@ class Box {
 		);
 		context.stroke();
 		context.fill();
+		console.log(`Drawing box from ${xOffset + scale * this.left}, ${yOffset + scale * this.top} to ${xOffset + scale * this.left + scale * (1 - this.left - this.right)}, ${yOffset + scale * this.top + scale * (1 - this.top - this.bottom)}`);
 	}
 }
 
@@ -401,6 +485,10 @@ class Distance {
 		this.feet += feet;
 	}
 
+	clone() {
+		return new Distance(this.feet);
+	}
+
 	getFeet() {
 		return this.feet;
 	}
@@ -413,8 +501,20 @@ class Distance {
 class DescriptionState {
 	constructor() {
 		this.state = "";
+		/**
+		 * Direction to draw next line
+		 * @type {string}
+		 */
 		this.direction = "";
+		/**
+		 * Distance to draw next line in pixels
+		 * @type {Distance?}
+		 */
 		this.distance = null;
+		/**
+		 * Current cursor location in pixels
+		 * @type {{x: number?, y: number?}}
+		 */
 		this.cursorLocation = {x: null, y: null};
 		this.section = "";
 		this.township = "";
@@ -424,7 +524,7 @@ class DescriptionState {
 		 * Width of the canvas in feet
 		 * @type {number?}
 		 */
-		this.sectionScaleFeet = null;
+		this.sectionScaleFeet = 5280; // Assume 1 section scale
 		/**
 		 * Width of the canvas in pixels
 		 * @type {number?}
@@ -440,15 +540,24 @@ class DescriptionState {
 		mapContext.moveTo(x, y);
 		this.cursorLocation.x = x;
 		this.cursorLocation.y = y;
+		console.log(`Moving to ${x}, ${y}`);
 	}
 
 	lineTo(x = this.cursorLocation.x, y = this.cursorLocation.y) {
 		mapContext.lineTo(x, y);
 		this.cursorLocation.x = x;
 		this.cursorLocation.y = y;
+		console.log(`Planning line to ${x}, ${y}`);
 	}
 
-	translatePoint(x = this.cursorLocation.x, y = this.cursorLocation.y) {
+	/**
+	 * Converts a ratio of widths to absolute pixel coordinates
+	 * E.g., (0.5, 0.5) → [334, 200]
+	 * @param {number} x 
+	 * @param {number} y 
+	 * @returns {[number, number]}
+	 */
+	translatePoint(x, y) {
 		return [
 			this.xOffset + this.scale * x,
 			this.yOffset + this.scale * y
@@ -472,7 +581,7 @@ function updateMap() {
 	if (legalDescription.length > 0) {
 		state = new DescriptionState();
 		/* Remove unneeded punctuation */
-		legalDescription = legalDescription.replace(/[,.;"]/g, "");
+		legalDescription = legalDescription.replace(/[,.;]|(?<!\d)"/g, "");
 		/* Remove parentheticals */
 		legalDescription = legalDescription.replace(/\(.*?\)/g, "");
 		/* Convert non-breaking spaces to regular spaces */
@@ -497,11 +606,12 @@ function updateMap() {
 					const matchBreaks = (match[0].trim().match(/\s+/g)?.length ?? 0);
 					console.log(match[0].trim().split(/\s+/g));
 					let boxBreaks = 0;
-					let startingIndex;
+					let startingIndex = 0;
 					let endingIndex = 0;
 					let parenthetical = false;
 					let lastWasLetter = false;
 					let lastWasSpace = false;
+					// TODO: Fix to include first word if it's a match
 					for (; endingIndex < rawLegalDescription.length; endingIndex++) {
 						if (rawLegalDescription[endingIndex] === "(") {
 							parenthetical = true;
@@ -636,15 +746,21 @@ function updateMap() {
 						state.scale,
 						state.scale
 					);
+					console.log(`Drawing gray box from ${state.xOffset}, ${state.yOffset} to ${state.xOffset + state.scale}, ${state.yOffset + state.scale}`);
 					break;
 				}
 			}
 			for (let i = 0; i < state.tracts.length; i++) {
+				state.currentTract = state.tracts[i];
 				if (state.tracts[i].box) {
 					if (!state.tracts[i].steps.length)
 						state.tracts[i].box.draw(mapContext, state.scale, state.xOffset, state.yOffset);
 				}
 				state.tracts[i].steps.forEach(x => x[0].apply(null, x[1]));
+				mapContext.stroke();
+				// TODO: Only fill if ending and starting point the same
+				mapContext.fill();
+				console.log("Drawing lines");
 			}
 		} catch (e) {
 			legalDescriptionError.style.display = "block";
