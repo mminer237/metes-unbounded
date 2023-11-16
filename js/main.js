@@ -317,6 +317,7 @@ function queueLine() {
 	state.currentTract.steps.push([() => {
 		drawLine(initialize, distance, direction);
 	}, []]);
+	state.status = "drawing";
 	state.distance = null;
 	state.direction = "";
 }
