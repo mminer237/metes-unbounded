@@ -324,28 +324,29 @@ function queueLine() {
 
 function directionToRadians(direction) {
 	const directionParts = direction.split(" ");
-	let radians = cardinalDirectionToRadians(directionParts);
+	let radians = cardinalDirectionToRadians(directionParts[0]);
 
 	const matches = directionParts[1]?.match(/(\d+\.?\d*)°(?:(\d+\.?\d*)′)?(?:(\d+\.?\d*)″)?/u);
 	if (matches && directionParts[2]) {
-		const angleDifference = ((cardinalDirectionToRadians(directionParts[2]) + Math.PI * 2) % (Math.PI * 2) - radians) % Math.PI;
+		const secondDirection = cardinalDirectionToRadians(directionParts[2]);
+		const angleDifference = secondDirection - radians;
 		if (angleDifference == 0)
 			throw new Error(`${directionParts[0].charAt(0).toUpperCase() + directionParts[0].slice(1)} can't be modified by parallel direction ${directionParts[2]}`);
-		const right = angleDifference > 0;
+		const right = angleDifference === -Math.PI / 2;
 
 		let angle = parseInt(matches[1]);
 		if (matches[2])
 			angle += parseInt(matches[2]) / 60;
 		if (matches[3])
 			angle += parseInt(matches[3]) / 3600;
-		radians += angle * Math.PI / 180 * (right ? 1 : -1);
+		radians += angle * Math.PI / 180 * (right ? -1 : 1);
 	}
 
 	return radians;
 }
 
-function cardinalDirectionToRadians(directionParts, radians) {
-	switch (directionParts[0]) {
+function cardinalDirectionToRadians(direction) {
+	switch (direction) {
 		case "north":
 		case "N":
 			return Math.PI;
@@ -367,7 +368,7 @@ function cardinalDirectionToRadians(directionParts, radians) {
 		case "north-west":
 			return -Math.PI * 3 / 4;
 		default:
-			throw new Error("Invalid direction: " + directionParts[0]);
+			throw new Error("Invalid direction: " + direction[0]);
 	}
 }
 
