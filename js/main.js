@@ -255,7 +255,7 @@ const instructions = {
 		function: () => {}
 	},
 	"feet": {
-		matchWords: [/(\d+) (feet|foot|ft)/],
+		matchWords: [/(\d+\.?\d*) (feet|foot|ft)/],
 		function: match => {
 			state.distance = new Distance(parseFloat(match[1]));
 			if (state.direction)
@@ -263,47 +263,47 @@ const instructions = {
 		}
 	},
 	"inches": {
-		matchWords: [/(\d+) (inch(es)?|in)/],
+		matchWords: [/(\d+\.?\d*) (inch(es)?|in)/],
 		function: match => {
 			if (!state.distance)
-				state.distance = new Distance(match[1] / 12);
+				state.distance = new Distance(parseFloat(match[1]) / 12);
 			else
-				state.distance.addFeet(match[1] / 12);
+				state.distance.addFeet(parseFloat(match[1]) / 12);
 			if (state.direction)
 				queueLine();
 		}
 	},
 	"chains": {
-		matchWords: [/(\d+) (chain|ch)s?/],
+		matchWords: [/(\d+\.?\d*) (chain|ch)s?/],
 		function: match => {
-			state.distance = new Distance(match[1] * 66);
+			state.distance = new Distance(parseFloat(match[1]) * 66);
 			if (state.direction)
 				queueLine();
 		}
 	},
 	"links": {
-		matchWords: [/(\d+) (link|li|l)s?/],
+		matchWords: [/(\d+\.?\d*) (link|li|l)s?/],
 		function: match => {
 			if (!state.distance)
-				state.distance = new Distance(match[1] * 0.66);
+				state.distance = new Distance(parseFloat(match[1]) * 0.66);
 			else
-				state.distance.addFeet(match[1] * 0.66);
+				state.distance.addFeet(parseFloat(match[1]) * 0.66);
 			if (state.direction)
 				queueLine();
 		}
 	},
 	"rods": {
-		matchWords: [/(\d+) (rod|r)s?/],
+		matchWords: [/(\d+\.?\d*) (rod|r)s?/],
 		function: match => {
-			state.distance = new Distance(match[1] * 16.5);
+			state.distance = new Distance(parseFloat(match[1]) * 16.5);
 			if (state.direction)
 				queueLine();
 		}
 	},
 	"meters": {
-		matchWords: [/(\d+) (meter|metre|m)s?/],
+		matchWords: [/(\d+\.?\d*) (meter|metre|m)s?/],
 		function: match => {
-			state.distance = new Distance(match[1] * 3.28084);
+			state.distance = new Distance(parseFloat(match[1]) * 3.28084);
 			if (state.direction)
 				queueLine();
 		}
@@ -326,7 +326,7 @@ function directionToRadians(direction) {
 	const directionParts = direction.split(" ");
 	let radians = cardinalDirectionToRadians(directionParts);
 
-	const matches = directionParts[1]?.match(/(\d+)°(?:(\d+)′)?(?:(\d+)″)?/u);
+	const matches = directionParts[1]?.match(/(\d+\.?\d*)°(?:(\d+\.?\d*)′)?(?:(\d+\.?\d*)″)?/u);
 	if (matches && directionParts[2]) {
 		const angleDifference = ((cardinalDirectionToRadians(directionParts[2]) + Math.PI * 2) % (Math.PI * 2) - radians) % Math.PI;
 		if (angleDifference == 0)
@@ -582,7 +582,7 @@ function updateMap() {
 	if (legalDescription.length > 0) {
 		state = new DescriptionState();
 		/* Remove unneeded punctuation */
-		legalDescription = legalDescription.replace(/[,.;]|(?<!\d)"/g, "");
+		legalDescription = legalDescription.replace(/[,;]|(?<!\d)[."]/g, "");
 		/* Remove parentheticals */
 		legalDescription = legalDescription.replace(/\(.*?\)/g, "");
 		/* Convert non-breaking spaces to regular spaces */
