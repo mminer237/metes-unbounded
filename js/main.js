@@ -242,16 +242,16 @@ const instructions = {
 		function: () => {},
 		type: "relational"
 	},
+	"thence": {
+		matchWords: [/(and )?thence/],
+		function: () => {}
+	},
 	"except": {
 		matchWords: [/(also )?except(ing)?/],
 		function: () => {}
 	},
 	"include": {
-		matchWords: [/^and/, /also/, /includ(e|ing)?/],
-		function: () => {}
-	},
-	"thence": {
-		matchWords: [/thence/],
+		matchWords: [/^and the\b/, /also/, /includ(e|ing)?/],
 		function: () => {}
 	},
 	"feet": {
