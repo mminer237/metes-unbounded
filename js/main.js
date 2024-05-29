@@ -54,6 +54,11 @@ const instructions = {
 		},
 		type: "part"
 	},
+	"a corner": {
+		matchWords: [/a corner|said corner/],
+		function: () => {},
+		type: "point"
+	},
 	"corner": {
 		matchWords: [/corner/],
 		function: () => {
