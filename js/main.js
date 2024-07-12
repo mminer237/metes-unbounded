@@ -22,7 +22,7 @@ const instructions = {
 		}
 	},
 	"begin": {
-		matchWords: [/commencing/, /beginning (on|at)/],
+		matchWords: [/commencing/, /beginning (on|at)/, /point of beginning/],
 		function: () => { state.status = "beginning"; }
 	},
 	"section": {
