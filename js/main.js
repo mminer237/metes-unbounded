@@ -95,7 +95,7 @@ const instructions = {
 		type: "point"
 	},
 	"iron rod": {
-		matchWords: [/iron (rod|pipe|pin)( monument)?/],
+		matchWords: [/((iron|landscap(e|ing)) (rod|pin|(mag )?nail)( (survey )?monument)?|(railroad|gin) (tie|spike))/],
 		function: () => {
 			state.currentTract.steps.push([()=>{
 				mapContext.fillStyle = "#a19d94";
@@ -109,6 +109,26 @@ const instructions = {
 				);
 				console.log(`Drawing iron rod at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
 				mapContext.fill();
+				setStatusStyle();
+			}, []]);
+		},
+		type: "point"
+	},
+	"iron pipe": {
+		matchWords: [/iron pipe( monument)?/],
+		function: () => {
+			state.currentTract.steps.push([()=>{
+				mapContext.strokeStyle = "#a19d94";
+				mapContext.beginPath();
+				mapContext.arc(
+					state.cursorLocation.x,
+					state.cursorLocation.y,
+					2,
+					0,
+					2 * Math.PI
+				);
+				console.log(`Drawing iron pipe at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
+				mapContext.stroke();
 				setStatusStyle();
 			}, []]);
 		},
@@ -128,6 +148,26 @@ const instructions = {
 					2 * Math.PI
 				);
 				console.log(`Drawing stone at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
+				mapContext.fill();
+				setStatusStyle();
+			}, []]);
+		},
+		type: "point"
+	},
+	"wooden post": {
+		matchWords: [/(wooden|hedge) post/],
+		function: () => {
+			state.currentTract.steps.push([()=>{
+				mapContext.fillStyle = "#c6a684";
+				mapContext.beginPath();
+				mapContext.arc(
+					state.cursorLocation.x,
+					state.cursorLocation.y,
+					2,
+					0,
+					2 * Math.PI
+				);
+				console.log(`Drawing wooden post at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
 				mapContext.fill();
 				setStatusStyle();
 			}, []]);
