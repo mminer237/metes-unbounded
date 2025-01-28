@@ -98,18 +98,13 @@ const instructions = {
 		matchWords: [/((iron )?(landscap(e|ing) )?(rod|pin|(mag )?nail)( (survey )?monument)?|(railroad|gin) (tie|spike))/],
 		function: () => {
 			state.currentTract.steps.push([()=>{
-				mapContext.fillStyle = "#a19d94";
-				mapContext.beginPath();
-				mapContext.arc(
+				state.currentTract.points.push(new Point(
 					state.cursorLocation.x,
 					state.cursorLocation.y,
-					2,
-					0,
-					2 * Math.PI
-				);
-				console.log(`Drawing iron rod at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
-				mapContext.fill();
-				setStatusStyle();
+					"#a19d94",
+					null,
+					2
+				));
 			}, []]);
 		},
 		type: "point"
@@ -118,18 +113,13 @@ const instructions = {
 		matchWords: [/iron pipe( monument)?/],
 		function: () => {
 			state.currentTract.steps.push([()=>{
-				mapContext.strokeStyle = "#a19d94";
-				mapContext.beginPath();
-				mapContext.arc(
+				state.currentTract.points.push(new Point(
 					state.cursorLocation.x,
 					state.cursorLocation.y,
-					2,
-					0,
-					2 * Math.PI
-				);
-				console.log(`Drawing iron pipe at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
-				mapContext.stroke();
-				setStatusStyle();
+					null,
+					"#a19d94",
+					2
+				));
 			}, []]);
 		},
 		type: "point"
@@ -138,18 +128,13 @@ const instructions = {
 		matchWords: [/stone(( survey)? monument)?/],
 		function: () => {
 			state.currentTract.steps.push([()=>{
-				mapContext.fillStyle = "#a1a1a4";
-				mapContext.beginPath();
-				mapContext.arc(
+				state.currentTract.points.push(new Point(
 					state.cursorLocation.x,
 					state.cursorLocation.y,
-					2,
-					0,
-					2 * Math.PI
-				);
-				console.log(`Drawing stone at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
-				mapContext.fill();
-				setStatusStyle();
+					"#a1a1a4",
+					null,
+					2
+				));
 			}, []]);
 		},
 		type: "point"
@@ -158,18 +143,13 @@ const instructions = {
 		matchWords: [/(wooden|hedge) post/],
 		function: () => {
 			state.currentTract.steps.push([()=>{
-				mapContext.fillStyle = "#c6a684";
-				mapContext.beginPath();
-				mapContext.arc(
+				state.currentTract.points.push(new Point(
 					state.cursorLocation.x,
 					state.cursorLocation.y,
-					2,
-					0,
-					2 * Math.PI
-				);
-				console.log(`Drawing wooden post at ${state.cursorLocation.x}, ${state.cursorLocation.y}`);
-				mapContext.fill();
-				setStatusStyle();
+					"#c6a684",
+					null,
+					2
+				));
 			}, []]);
 		},
 		type: "point"
@@ -483,7 +463,12 @@ class Tract {
 		this.box = null;
 		this.instructionBuffer = [[]];
 		this.instructionBufferIndex = 0;
+		/**
+		 * @type {[function, any[]][]}
+		 * @description Array of functions to execute and their arguments
+		 */
 		this.steps = [];
+		this.points = [];
 		this.excepting = false;
 	}
 
@@ -534,6 +519,16 @@ class Tract {
 			default:
 				throw new Error("Invalid part: " + part);
 		}
+	}
+}
+
+class Point {
+	constructor(x, y, fillColor = "#808080", strokeColor = null, radius = 2) {
+		this.x = x;
+		this.y = y;
+		this.fillColor = fillColor;
+		this.strokeColor = strokeColor;
+		this.radius = radius;
 	}
 }
 
@@ -826,6 +821,25 @@ function updateMap() {
 				// TODO: Only fill if ending and starting point the same
 				mapContext.fill();
 				console.log("Drawing lines");
+				state.tracts[i].points.forEach(point => {
+					mapContext.beginPath();
+					mapContext.arc(
+						point.x,
+						point.y,
+						point.radius,
+						0,
+						2 * Math.PI
+					);
+					if (point.fillColor) {
+						mapContext.fillStyle = point.fillColor;
+						mapContext.fill();
+					}
+					if (point.strokeColor) {
+						mapContext.strokeStyle = point.strokeColor;
+						mapContext.stroke();
+					}
+					console.log(`Drawing point at ${point.x}, ${point.y}`);
+				});
 			}
 		} catch (e) {
 			legalDescriptionError.style.display = "block";
