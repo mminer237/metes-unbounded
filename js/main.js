@@ -199,6 +199,20 @@ const instructions = {
 				queueLine();
 		}
 	},
+	// TODO: Figure out how to ignore "said Southeast Quarter" & "line of"
+	// Ideally, state.direction would be a buffer of directions so we could keep previous directions and just pop off the last one. Possible future refactor TODO.
+	"zone": {
+		matchWords: [/zone/],
+		function: () => {
+			state.direction = "";
+		}
+	},
+	"line": {
+		matchWords: [/line/],
+		function: () => {
+			state.direction = "";
+		}
+	},
 	"north": {
 		matchWords: [/north/, /northerly/, /n/, /northward/, /northwards/],
 		function: () => {
@@ -710,7 +724,10 @@ function updateMap() {
 							}
 						}
 					}
-					if (startingIndex)
+					if (
+						startingIndex &&
+						instructions[instruction].type !== "ignore"
+					)
 						highlightRanges.push([startingIndex, endingIndex]);
 
 					/* Remove the matched phrase, leaving only the capture groups */
