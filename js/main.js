@@ -89,11 +89,6 @@ const instructions = {
 		},
 		type: "point"
 	},
-	"point": {
-		matchWords: [/point/],
-		function: () => {},
-		type: "point"
-	},
 	"iron rod": {
 		matchWords: [/((iron )?(landscap(e|ing) )?(rod|pin|(mag )?nail)( (survey )?monument)?|(railroad|gin) (tie|spike))/],
 		function: () => {
