@@ -95,7 +95,7 @@ const instructions = {
 		type: "point"
 	},
 	"iron rod": {
-		matchWords: [/((iron|landscap(e|ing)) (rod|pin|(mag )?nail)( (survey )?monument)?|(railroad|gin) (tie|spike))/],
+		matchWords: [/((iron )?(landscap(e|ing) )?(rod|pin|(mag )?nail)( (survey )?monument)?|(railroad|gin) (tie|spike))/],
 		function: () => {
 			state.currentTract.steps.push([()=>{
 				mapContext.fillStyle = "#a19d94";
@@ -673,6 +673,7 @@ function updateMap() {
 					let lastWasLetter = false;
 					let lastWasSpace = false;
 					// TODO: Fix to include first word if it's a match
+					// TODO: Fix line breaks getting index off
 					for (; endingIndex < rawLegalDescription.length; endingIndex++) {
 						if (rawLegalDescription[endingIndex] === "(") {
 							parenthetical = true;
